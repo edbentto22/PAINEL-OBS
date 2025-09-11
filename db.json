@@ -14,8 +14,8 @@
       "redCards": 7
     },
     "timer": {
-      "minutes": 31,
-      "seconds": 53,
+      "minutes": 38,
+      "seconds": 57,
       "isRunning": true
     },
     "period": "1T",
@@ -25,6 +25,6 @@
       "homeScore": 1,
       "awayScore": 0
     },
-    "lastUpdated": "2025-09-11T20:09:19.086Z"
+    "lastUpdated": "2025-09-11T20:16:24.457Z"
   }
 }

@@ -305,6 +305,8 @@ export function GameStateProvider({ children }) {
       if (savedState) {
         dispatch({ type: 'LOAD_STATE', payload: initialState });
         setLastUpdated(savedState.lastUpdated);
+        setLastLocalUpdate(Date.now());
+        setSkipNextPoll(true);
         console.log('Jogo resetado (localStorage)');
       }
       return;
@@ -315,6 +317,8 @@ export function GameStateProvider({ children }) {
       const { id, lastUpdated: apiLastUpdated, ...gameData } = resetState;
       dispatch({ type: 'LOAD_STATE', payload: gameData });
       setLastUpdated(apiLastUpdated);
+      setLastLocalUpdate(Date.now());
+      setSkipNextPoll(true);
       console.log('Jogo resetado (API)');
     } catch (error) {
       console.error('Erro ao resetar via API, usando localStorage:', error);
@@ -329,6 +333,8 @@ export function GameStateProvider({ children }) {
       if (savedState) {
         dispatch({ type: 'LOAD_STATE', payload: initialState });
         setLastUpdated(savedState.lastUpdated);
+        setLastLocalUpdate(Date.now());
+        setSkipNextPoll(true);
         console.log('Jogo resetado (localStorage fallback)');
       }
     }
