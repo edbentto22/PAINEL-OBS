@@ -87,6 +87,11 @@ function gameStateReducer(state, action) {
         ...state,
         timer: { ...state.timer, ...action.payload }
       };
+    case 'RESET_TIMER':
+      return {
+        ...state,
+        timer: { minutes: 0, seconds: 0, isRunning: false }
+      };
     case 'INCREMENT_TIMER':
       const newSeconds = state.timer.seconds + 1;
       const newMinutes = newSeconds >= 60 ? state.timer.minutes + 1 : state.timer.minutes;
@@ -173,8 +178,9 @@ export function GameStateProvider({ children }) {
         const { id, lastUpdated: apiLastUpdated, ...gameData } = apiState;
         dispatch({ type: 'LOAD_STATE', payload: gameData });
         setLastUpdated(apiLastUpdated);
+        setLastLocalUpdate(Date.now());
         setUseLocalStorage(false);
-        console.log('Estado carregado da API');
+        console.log('Estado sincronizado da API - Overlay atualizado');
       }
     } catch (error) {
       console.error('API não disponível, usando localStorage:', error);
@@ -186,7 +192,8 @@ export function GameStateProvider({ children }) {
         const { id, lastUpdated: localLastUpdated, ...gameData } = localState;
         dispatch({ type: 'LOAD_STATE', payload: gameData });
         setLastUpdated(localLastUpdated);
-        console.log('Estado carregado do localStorage');
+        setLastLocalUpdate(Date.now());
+        console.log('Estado carregado do localStorage - Overlay atualizado');
       } else {
         console.log('Usando estado inicial');
       }
@@ -308,7 +315,7 @@ export function GameStateProvider({ children }) {
         setLastUpdated(savedState.lastUpdated);
         setLastLocalUpdate(Date.now());
         setSkipNextPoll(true);
-        console.log('Jogo resetado (localStorage)');
+        console.log('Jogo resetado completamente (localStorage) - Todos os dados zerados');
       }
       return;
     }
@@ -320,7 +327,7 @@ export function GameStateProvider({ children }) {
       setLastUpdated(apiLastUpdated);
       setLastLocalUpdate(Date.now());
       setSkipNextPoll(true);
-      console.log('Jogo resetado (API)');
+      console.log('Jogo resetado completamente (API) - Todos os dados zerados');
     } catch (error) {
       console.error('Erro ao resetar via API, usando localStorage:', error);
       setUseLocalStorage(true);
@@ -336,7 +343,7 @@ export function GameStateProvider({ children }) {
         setLastUpdated(savedState.lastUpdated);
         setLastLocalUpdate(Date.now());
         setSkipNextPoll(true);
-        console.log('Jogo resetado (localStorage fallback)');
+        console.log('Jogo resetado completamente (localStorage fallback) - Todos os dados zerados');
       }
     }
   }, [useLocalStorage, saveToLocalStorage]);
@@ -346,7 +353,7 @@ export function GameStateProvider({ children }) {
     // Marca que houve uma atualização local para evitar conflitos com polling
     // Exclui ações relacionadas ao timer, carregamento de estado e cartões vermelhos
     const excludedActions = [
-      'LOAD_STATE', 'INCREMENT_TIMER', 'START_TIMER', 'STOP_TIMER'
+      'LOAD_STATE', 'INCREMENT_TIMER', 'START_TIMER', 'STOP_TIMER', 'RESET_TIMER'
     ];
     
     if (!excludedActions.includes(action.type)) {

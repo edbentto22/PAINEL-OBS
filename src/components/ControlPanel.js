@@ -79,8 +79,7 @@ function ControlPanel() {
 
   const resetTimer = () => {
     dispatch({
-      type: 'UPDATE_TIMER',
-      payload: { minutes: 0, seconds: 0, isRunning: false }
+      type: 'RESET_TIMER'
     });
   };
 
