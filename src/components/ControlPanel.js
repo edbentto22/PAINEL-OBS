@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useGameState } from '../context/GameStateContext';
 
 function ControlPanel() {
-  const { state, dispatch, isLoading, resetGame, refreshState } = useGameState();
+  const { state, dispatch, isLoading, resetGame, refreshState, useLocalStorage } = useGameState();
   const homeLogoRef = useRef();
   const awayLogoRef = useRef();
 
@@ -104,9 +104,23 @@ function ControlPanel() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-800 mb-4 text-center">
           Painel de Controle - Transmissão de Futebol
         </h1>
+        
+        {/* Status da Conexão */}
+        <div className="mb-6 text-center">
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            useLocalStorage 
+              ? 'bg-yellow-100 text-yellow-800' 
+              : 'bg-green-100 text-green-800'
+          }`}>
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              useLocalStorage ? 'bg-yellow-500' : 'bg-green-500'
+            }`}></div>
+            {useLocalStorage ? 'Modo Offline (localStorage)' : 'Conectado à API'}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Home Team */}
