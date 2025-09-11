@@ -346,8 +346,7 @@ export function GameStateProvider({ children }) {
     // Marca que houve uma atualização local para evitar conflitos com polling
     // Exclui ações relacionadas ao timer, carregamento de estado e cartões vermelhos
     const excludedActions = [
-      'LOAD_STATE', 'INCREMENT_TIMER', 'START_TIMER', 'STOP_TIMER',
-      'UPDATE_HOME_RED_CARDS', 'UPDATE_AWAY_RED_CARDS'
+      'LOAD_STATE', 'INCREMENT_TIMER', 'START_TIMER', 'STOP_TIMER'
     ];
     
     if (!excludedActions.includes(action.type)) {
