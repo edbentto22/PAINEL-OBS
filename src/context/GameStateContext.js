@@ -277,6 +277,13 @@ export function GameStateProvider({ children }) {
         const apiState = await gameStateAPI.getGameState();
         if (apiState && apiState.lastUpdated !== lastUpdated) {
           const { id, lastUpdated: apiLastUpdated, ...gameData } = apiState;
+          
+          // Preserva o estado do timer local para evitar conflitos
+          if (state.timer.isRunning !== gameData.timer.isRunning) {
+            gameData.timer = { ...gameData.timer, isRunning: state.timer.isRunning };
+            console.log('Preservando estado do timer local durante sincronização:', state.timer.isRunning ? 'rodando' : 'pausado');
+          }
+          
           dispatch({ type: 'LOAD_STATE', payload: gameData });
           setLastUpdated(apiLastUpdated);
           console.log('Estado sincronizado via polling');
@@ -288,7 +295,7 @@ export function GameStateProvider({ children }) {
     }, 500); // Polling mais frequente para atualizações mais rápidas
 
     return () => clearInterval(interval);
-  }, [lastUpdated, lastLocalUpdate, skipNextPoll, useLocalStorage]);
+  }, [lastUpdated, lastLocalUpdate, skipNextPoll, useLocalStorage, state.timer.isRunning]);
 
   // Timer interval effect
   useEffect(() => {
