@@ -99,6 +99,7 @@ function gameStateReducer(state, action) {
         }
       };
     case 'UPDATE_PERIOD':
+    case 'SET_PERIOD':
       return {
         ...state,
         period: action.payload
