@@ -337,7 +337,10 @@ export function GameStateProvider({ children }) {
   // Dispatcher customizado que marca atualizações locais
   const customDispatch = useCallback((action) => {
     // Marca que houve uma atualização local para evitar conflitos com polling
-    if (action.type !== 'LOAD_STATE' && action.type !== 'INCREMENT_TIMER') {
+    // Exclui ações relacionadas ao timer e carregamento de estado
+    const timerActions = ['LOAD_STATE', 'INCREMENT_TIMER', 'UPDATE_TIMER', 'START_TIMER', 'STOP_TIMER'];
+    
+    if (!timerActions.includes(action.type)) {
       setLastLocalUpdate(Date.now());
       setSkipNextPoll(true);
       console.log('Dispatching action:', action.type, action.payload);
