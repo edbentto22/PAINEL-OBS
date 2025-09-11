@@ -241,7 +241,7 @@ export function GameStateProvider({ children }) {
     if (!isLoading && state !== initialState) {
       const timeoutId = setTimeout(() => {
         saveStateToAPI(state);
-      }, 100); // Debounce de 100ms para evitar múltiplas chamadas
+      }, 50); // Debounce de 50ms para resposta mais rápida
       
       return () => clearTimeout(timeoutId);
     }
@@ -277,7 +277,7 @@ export function GameStateProvider({ children }) {
         console.error('Erro no polling, mudando para localStorage:', error);
         setUseLocalStorage(true);
       }
-    }, 2000);
+    }, 500); // Polling mais frequente para atualizações mais rápidas
 
     return () => clearInterval(interval);
   }, [lastUpdated, lastLocalUpdate, skipNextPoll, useLocalStorage]);
