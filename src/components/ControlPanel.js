@@ -36,7 +36,16 @@ function ControlPanel() {
     });
   };
 
-  const updateRedCards = (team, increment) => {
+  const updateRedCards = (team, value) => {
+    const newCards = Math.max(0, Math.min(11, value));
+    
+    dispatch({
+      type: team === 'home' ? 'UPDATE_HOME_RED_CARDS' : 'UPDATE_AWAY_RED_CARDS',
+      payload: newCards
+    });
+  };
+
+  const incrementRedCards = (team, increment) => {
     const currentCards = team === 'home' ? state.homeTeam.redCards : state.awayTeam.redCards;
     const newCards = Math.max(0, Math.min(11, currentCards + increment));
     
@@ -182,20 +191,37 @@ function ControlPanel() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cartões Vermelhos
                 </label>
-                <div className="flex space-x-2">
-                  {[0, 1, 2, 3, 4].map(count => (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
                     <button
-                      key={count}
-                      onClick={() => updateRedCards('home', count)}
-                      className={`px-3 py-2 rounded ${
-                        state.homeTeam.redCards === count
-                          ? 'bg-red-500 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      onClick={() => incrementRedCards('home', -1)}
+                      className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                     >
-                      {count}
+                      ▼
                     </button>
-                  ))}
+                    <span className="text-2xl font-bold w-12 text-center">{state.homeTeam.redCards}</span>
+                    <button
+                      onClick={() => incrementRedCards('home', 1)}
+                      className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      ▲
+                    </button>
+                  </div>
+                  <div className="flex space-x-1">
+                    {[0, 1, 2, 3, 4].map(count => (
+                      <button
+                        key={count}
+                        onClick={() => updateRedCards('home', count)}
+                        className={`px-2 py-1 text-xs rounded ${
+                          state.homeTeam.redCards === count
+                            ? 'bg-red-500 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {count}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -260,20 +286,37 @@ function ControlPanel() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cartões Vermelhos
                 </label>
-                <div className="flex space-x-2">
-                  {[0, 1, 2, 3, 4].map(count => (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
                     <button
-                      key={count}
-                      onClick={() => updateRedCards('away', count)}
-                      className={`px-3 py-2 rounded ${
-                        state.awayTeam.redCards === count
-                          ? 'bg-red-500 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      onClick={() => incrementRedCards('away', -1)}
+                      className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                     >
-                      {count}
+                      ▼
                     </button>
-                  ))}
+                    <span className="text-2xl font-bold w-12 text-center">{state.awayTeam.redCards}</span>
+                    <button
+                      onClick={() => incrementRedCards('away', 1)}
+                      className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      ▲
+                    </button>
+                  </div>
+                  <div className="flex space-x-1">
+                    {[0, 1, 2, 3, 4].map(count => (
+                      <button
+                        key={count}
+                        onClick={() => updateRedCards('away', count)}
+                        className={`px-2 py-1 text-xs rounded ${
+                          state.awayTeam.redCards === count
+                            ? 'bg-red-500 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {count}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
