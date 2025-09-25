@@ -130,31 +130,41 @@ function ControlPanel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Home Team */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Home Team - Left Column */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Time da Casa (Esquerda)</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">Time da Casa (Esquerda)</h2>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Logo do Time
                 </label>
-                <input
-                  ref={homeLogoRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleLogoUpload('home', e.target.files[0])}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                {state.homeTeam.logo && (
-                  <img src={state.homeTeam.logo} alt="Home team logo" className="mt-2 w-16 h-16 object-contain" />
-                )}
+                <div className="flex items-center gap-3">
+                  {state.homeTeam.logo && (
+                    <img src={state.homeTeam.logo} alt="Home team logo" className="w-16 h-16 object-contain rounded-full ring-2 ring-gray-200" />
+                  )}
+                  <input
+                    ref={homeLogoRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleLogoUpload('home', e.target.files[0])}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => homeLogoRef.current?.click()}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    <span className="text-gray-500">⭱</span>
+                    Upload
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nome/Sigla (máx 4 chars)
+                  Nome/Sigla
                 </label>
                 <input
                   type="text"
@@ -163,6 +173,7 @@ function ControlPanel() {
                   maxLength={4}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+                <p className="text-xs text-gray-500 mt-1">Máximo 4 caracteres</p>
               </div>
 
               <div>
@@ -172,16 +183,16 @@ function ControlPanel() {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => updateScore('home', -1)}
-                    className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xl font-bold"
                   >
-                    ▼
+                    −
                   </button>
-                  <span className="text-2xl font-bold w-12 text-center">{state.homeTeam.score}</span>
+                  <span className="text-4xl font-bold w-20 text-center bg-gray-100 py-3 rounded-lg border border-gray-200">{state.homeTeam.score}</span>
                   <button
                     onClick={() => updateScore('home', 1)}
-                    className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xl font-bold"
                   >
-                    ▲
+                    +
                   </button>
                 </div>
               </div>
@@ -190,152 +201,37 @@ function ControlPanel() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cartões Vermelhos
                 </label>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
+                <div className="flex space-x-2">
+                  {[0, 1, 2, 3, 4].map(count => (
                     <button
-                      onClick={() => incrementRedCards('home', -1)}
-                      className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      key={count}
+                      onClick={() => updateRedCards('home', count)}
+                      className={`px-3 py-1.5 text-sm rounded-md ${
+                        state.homeTeam.redCards === count
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
                     >
-                      ▼
+                      {count}
                     </button>
-                    <span className="text-2xl font-bold w-12 text-center">{state.homeTeam.redCards}</span>
-                    <button
-                      onClick={() => incrementRedCards('home', 1)}
-                      className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      ▲
-                    </button>
-                  </div>
-                  <div className="flex space-x-1">
-                    {[0, 1, 2, 3, 4].map(count => (
-                      <button
-                        key={count}
-                        onClick={() => updateRedCards('home', count)}
-                        className={`px-2 py-1 text-xs rounded ${
-                          state.homeTeam.redCards === count
-                            ? 'bg-red-500 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        {count}
-                      </button>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Away Team */}
+          {/* Central Controls - Middle Column */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Time Visitante (Direita)</h2>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">Controle do Cronômetro</h2>
             
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo do Time
-                </label>
-                <input
-                  ref={awayLogoRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleLogoUpload('away', e.target.files[0])}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                {state.awayTeam.logo && (
-                  <img src={state.awayTeam.logo} alt="Away team logo" className="mt-2 w-16 h-16 object-contain" />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nome/Sigla (máx 4 chars)
-                </label>
-                <input
-                  type="text"
-                  value={state.awayTeam.name}
-                  onChange={(e) => updateTeamName('away', e.target.value)}
-                  maxLength={4}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Placar
-                </label>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => updateScore('away', -1)}
-                    className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    ▼
-                  </button>
-                  <span className="text-2xl font-bold w-12 text-center">{state.awayTeam.score}</span>
-                  <button
-                    onClick={() => updateScore('away', 1)}
-                    className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    ▲
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cartões Vermelhos
-                </label>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => incrementRedCards('away', -1)}
-                      className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      ▼
-                    </button>
-                    <span className="text-2xl font-bold w-12 text-center">{state.awayTeam.redCards}</span>
-                    <button
-                      onClick={() => incrementRedCards('away', 1)}
-                      className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      ▲
-                    </button>
-                  </div>
-                  <div className="flex space-x-1">
-                    {[0, 1, 2, 3, 4].map(count => (
-                      <button
-                        key={count}
-                        onClick={() => updateRedCards('away', count)}
-                        className={`px-2 py-1 text-xs rounded ${
-                          state.awayTeam.redCards === count
-                            ? 'bg-red-500 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        {count}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Timer and Game Controls */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Timer */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Cronômetro</h2>
-            
-            <div className="text-center mb-4">
-              <div className="text-4xl font-bold text-gray-800 mb-2">
+            <div className="text-center mb-6">
+              <div className="text-6xl font-bold text-gray-800 mb-4 bg-gray-100 py-4 rounded-lg">
                 {formatTime(state.timer.minutes, state.timer.seconds)}
               </div>
-              <div className="flex justify-center space-x-2">
+              <div className="flex justify-center space-x-2 mb-4">
                 <button
                   onClick={toggleTimer}
-                  className={`px-4 py-2 rounded font-medium ${
+                  className={`px-6 py-3 rounded-lg font-medium text-lg ${
                     state.timer.isRunning
                       ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                       : 'bg-green-500 text-white hover:bg-green-600'
@@ -345,110 +241,191 @@ function ControlPanel() {
                 </button>
                 <button
                   onClick={resetTimer}
-                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                  className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium text-lg"
                 >
                   🔄 Reset
                 </button>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="text-center">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Minutos
                 </label>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <button
                     onClick={() => updateTimer('minutes', -1)}
-                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
                   >
-                    ▼
+                    −
                   </button>
-                  <span className="text-xl font-bold w-12 text-center">{state.timer.minutes}</span>
+                  <span className="text-2xl font-bold w-16 text-center bg-gray-100 py-2 rounded border border-gray-200">{state.timer.minutes}</span>
                   <button
                     onClick={() => updateTimer('minutes', 1)}
-                    className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
                   >
-                    ▲
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Segundos
+                </label>
+                <div className="flex items-center justify-center space-x-2">
+                  <button
+                    onClick={() => updateTimer('seconds', -1)}
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
+                  >
+                    −
+                  </button>
+                  <span className="text-2xl font-bold w-16 text-center bg-gray-100 py-2 rounded border border-gray-200">{state.timer.seconds}</span>
+                  <button
+                    onClick={() => updateTimer('seconds', 1)}
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-700 mb-3 text-center">Tempo de Jogo</h3>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={() => dispatch({ type: 'SET_PERIOD', payload: '1T' })}
+                  className={`px-6 py-3 rounded-lg font-medium ${
+                    state.period === '1T'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  1º Tempo
+                </button>
+                <button
+                  onClick={() => dispatch({ type: 'SET_PERIOD', payload: '2T' })}
+                  className={`px-6 py-3 rounded-lg font-medium ${
+                    state.period === '2T'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  2º Tempo
+                </button>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-700 mb-3">Acréscimos</h3>
+              <div className="flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => updateExtraTime(-1)}
+                  className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
+                >
+                  −
+                </button>
+                <span className="text-3xl font-bold w-20 text-center bg-gray-100 py-2 rounded border border-gray-200">+{state.extraTime}</span>
+                <button
+                  onClick={() => updateExtraTime(1)}
+                  className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
+                >
+                  +
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mt-2">0 a 15 minutos</p>
+             </div>
+           </div>
+
+           {/* Away Team - Right Column */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">Time Visitante (Direita)</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Logo do Time
+                </label>
+                <div className="flex items-center gap-3">
+                  {state.awayTeam.logo && (
+                    <img src={state.awayTeam.logo} alt="Away team logo" className="w-16 h-16 object-contain rounded-full ring-2 ring-gray-200" />
+                  )}
+                  <input
+                    ref={awayLogoRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleLogoUpload('away', e.target.files[0])}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => awayLogoRef.current?.click()}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    <span className="text-gray-500">⭱</span>
+                    Upload
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Segundos
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome/Sigla
+                </label>
+                <input
+                  type="text"
+                  value={state.awayTeam.name}
+                  onChange={(e) => updateTeamName('away', e.target.value)}
+                  maxLength={4}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Máximo 4 caracteres</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Placar
                 </label>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => updateTimer('seconds', -1)}
-                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    onClick={() => updateScore('away', -1)}
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xl font-bold"
                   >
-                    ▼
+                    −
                   </button>
-                  <span className="text-xl font-bold w-12 text-center">{state.timer.seconds}</span>
+                  <span className="text-4xl font-bold w-20 text-center bg-gray-100 py-3 rounded-lg border border-gray-200">{state.awayTeam.score}</span>
                   <button
-                    onClick={() => updateTimer('seconds', 1)}
-                    className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                    onClick={() => updateScore('away', 1)}
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xl font-bold"
                   >
-                    ▲
+                    +
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Period */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Tempo de Jogo</h2>
-            
-            <div className="space-y-4">
-              <div className="flex space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="period"
-                    value="1T"
-                    checked={state.period === "1T"}
-                    onChange={(e) => dispatch({ type: 'SET_PERIOD', payload: e.target.value })}
-                    className="mr-2"
-                  />
-                  1º Tempo
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cartões Vermelhos
                 </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="period"
-                    value="2T"
-                    checked={state.period === "2T"}
-                    onChange={(e) => dispatch({ type: 'SET_PERIOD', payload: e.target.value })}
-                    className="mr-2"
-                  />
-                  2º Tempo
-                </label>
+                <div className="flex space-x-2">
+                  {[0, 1, 2, 3, 4].map(count => (
+                    <button
+                      key={count}
+                      onClick={() => updateRedCards('away', count)}
+                      className={`px-3 py-1.5 text-sm rounded-md ${
+                        state.awayTeam.redCards === count
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {count}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Extra Time */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Acréscimos</h2>
-            
-            <div className="flex items-center justify-center space-x-2">
-              <button
-                onClick={() => updateExtraTime(-1)}
-                className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                ▼
-              </button>
-              <span className="text-2xl font-bold w-16 text-center">+{state.extraTime}</span>
-              <button
-                onClick={() => updateExtraTime(1)}
-                className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-              >
-                ▲
-              </button>
-            </div>
-            <p className="text-sm text-gray-600 text-center mt-2">minutos</p>
           </div>
         </div>
 

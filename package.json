@@ -15,15 +15,20 @@
   "devDependencies": {
     "autoprefixer": "^10.4.13",
     "postcss": "^8.4.21",
+    "serve": "^14.2.4",
     "tailwindcss": "^3.2.0"
   },
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "client": "PORT=3002 react-scripts start",
     "server": "json-server --watch db.json --port 3001",
+    "server:prod": "json-server --watch db.json --port 3001 --host 0.0.0.0",
+    "start:prod": "npm run build && node server.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy:build": "npm run build",
+    "serve": "serve -s build -l 3002"
   },
   "eslintConfig": {
     "extends": [
