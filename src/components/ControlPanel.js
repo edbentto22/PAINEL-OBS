@@ -6,16 +6,61 @@ function ControlPanel() {
   const homeLogoRef = useRef();
   const awayLogoRef = useRef();
 
-  const handleLogoUpload = (team, file) => {
+  // Redimensiona e comprime a imagem para evitar estouro do localStorage e melhorar performance
+  const processImage = async (file, maxDim = 256, mime = 'image/png', quality = 0.85) => {
+    return new Promise((resolve, reject) => {
+      try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const { width, height } = img;
+            const scale = Math.min(1, maxDim / Math.max(width, height));
+            const newW = Math.max(1, Math.round(width * scale));
+            const newH = Math.max(1, Math.round(height * scale));
+            canvas.width = newW;
+            canvas.height = newH;
+            ctx.drawImage(img, 0, 0, newW, newH);
+            try {
+              const dataUrl = canvas.toDataURL(mime, quality);
+              resolve(dataUrl);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+  const handleLogoUpload = async (team, file) => {
     if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+      try {
+        // Compressão básica para manter tamanho controlado no localStorage
+        const optimizedDataUrl = await processImage(file, 256, file.type.includes('jpeg') || file.type.includes('jpg') ? 'image/jpeg' : 'image/png', 0.85);
         dispatch({
           type: team === 'home' ? 'UPDATE_HOME_LOGO' : 'UPDATE_AWAY_LOGO',
-          payload: e.target.result
+          payload: optimizedDataUrl
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (e) {
+        // Fallback: se der erro ao processar, tenta salvar original (pode falhar por tamanho)
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          dispatch({
+            type: team === 'home' ? 'UPDATE_HOME_LOGO' : 'UPDATE_AWAY_LOGO',
+            payload: ev.target.result
+          });
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -45,15 +90,7 @@ function ControlPanel() {
     });
   };
 
-  const incrementRedCards = (team, increment) => {
-    const currentCards = team === 'home' ? state.homeTeam.redCards : state.awayTeam.redCards;
-    const newCards = Math.max(0, Math.min(11, currentCards + increment));
-    
-    dispatch({
-      type: team === 'home' ? 'UPDATE_HOME_RED_CARDS' : 'UPDATE_AWAY_RED_CARDS',
-      payload: newCards
-    });
-  };
+  // Removido: incrementRedCards (não utilizado)
 
   const updateTimer = (field, increment) => {
     const currentValue = state.timer[field];
@@ -290,56 +327,56 @@ function ControlPanel() {
                   </button>
                 </div>
               </div>
-            </div>
 
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-700 mb-3 text-center">Tempo de Jogo</h3>
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={() => dispatch({ type: 'SET_PERIOD', payload: '1T' })}
-                  className={`px-6 py-3 rounded-lg font-medium ${
-                    state.period === '1T'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  1º Tempo
-                </button>
-                <button
-                  onClick={() => dispatch({ type: 'SET_PERIOD', payload: '2T' })}
-                  className={`px-6 py-3 rounded-lg font-medium ${
-                    state.period === '2T'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  2º Tempo
-                </button>
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-gray-700 mb-3 text-center">Tempo de Jogo</h3>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => dispatch({ type: 'UPDATE_PERIOD', payload: '1T' })}
+                    className={`px-6 py-3 rounded-lg font-medium ${
+                      state.period === '1T'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    1º Tempo
+                  </button>
+                  <button
+                    onClick={() => dispatch({ type: 'UPDATE_PERIOD', payload: '2T' })}
+                    className={`px-6 py-3 rounded-lg font-medium ${
+                      state.period === '2T'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    2º Tempo
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-gray-700 mb-3">Acréscimos</h3>
+                <div className="flex items-center justify-center space-x-2">
+                  <button
+                    onClick={() => updateExtraTime(-1)}
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
+                  >
+                    −
+                  </button>
+                  <span className="text-3xl font-bold w-20 text-center bg-gray-100 py-2 rounded border border-gray-200">+{state.extraTime}</span>
+                  <button
+                    onClick={() => updateExtraTime(1)}
+                    className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">0 a 15 minutos</p>
               </div>
             </div>
+          </div>
 
-            <div className="text-center">
-              <h3 className="text-lg font-medium text-gray-700 mb-3">Acréscimos</h3>
-              <div className="flex items-center justify-center space-x-2">
-                <button
-                  onClick={() => updateExtraTime(-1)}
-                  className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
-                >
-                  −
-                </button>
-                <span className="text-3xl font-bold w-20 text-center bg-gray-100 py-2 rounded border border-gray-200">+{state.extraTime}</span>
-                <button
-                  onClick={() => updateExtraTime(1)}
-                  className="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-lg"
-                >
-                  +
-                </button>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">0 a 15 minutos</p>
-             </div>
-           </div>
-
-           {/* Away Team - Right Column */}
+          {/* Away Team - Right Column */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">Time Visitante (Direita)</h2>
             
@@ -450,11 +487,7 @@ function ControlPanel() {
           <div className="text-center mb-4">
             <button
               onClick={togglePenalties}
-              className={`px-6 py-3 rounded-lg font-medium ${
-                state.penalties?.active
-                  ? 'bg-red-500 text-white hover:bg-red-600'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
+              className={`px-6 py-3 rounded-lg font-medium ${state.penalties?.active ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
             >
               {state.penalties?.active ? 'Desativar Pênaltis' : 'Ativar Pênaltis'}
             </button>
