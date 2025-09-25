@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { gameStateAPI } from '../services/api';
 
 const GameStateContext = createContext();
+
+// Modo local-only (sem API/remoto)
+const LOCAL_MODE = true;
 
 const initialState = {
   homeTeam: {
@@ -141,6 +144,7 @@ export function GameStateProvider({ children }) {
   const [lastUpdated, setLastUpdated] = React.useState(null);
   const [lastLocalUpdate, setLastLocalUpdate] = React.useState(0);
   const [skipNextPoll, setSkipNextPoll] = React.useState(false);
+  const bcRef = useRef(null);
 
   // Função para salvar no localStorage
   const saveToLocalStorage = useCallback((gameState) => {
@@ -237,61 +241,91 @@ export function GameStateProvider({ children }) {
 
   // Carregar estado inicial
   useEffect(() => {
-    loadStateFromAPI();
-  }, [loadStateFromAPI]);
+    if (LOCAL_MODE) {
+      const localState = loadFromLocalStorage();
+      if (localState) {
+        const { lastUpdated: localLastUpdated, ...gameData } = localState;
+        dispatch({ type: 'LOAD_STATE', payload: gameData });
+        setLastUpdated(localLastUpdated);
+        console.log('Estado carregado do localStorage (LOCAL_MODE)');
+      } else {
+        console.log('Nenhum estado salvo encontrado, usando estado inicial (LOCAL_MODE)');
+      }
+      setUseLocalStorage(true);
+      setIsLoading(false);
+    } else {
+      loadStateFromAPI();
+    }
+  }, [loadFromLocalStorage, loadStateFromAPI]);
 
   // Salvar estado na API sempre que mudar (exceto no carregamento inicial)
   useEffect(() => {
-  if (!isLoading && state !== initialState) {
-    const timeoutId = setTimeout(() => {
-      saveStateToAPI(state);
-    }, 50); // Debounce de 50ms para resposta mais rápida
-    
-    return () => clearTimeout(timeoutId);
-  }
-  }, [state, isLoading, saveStateToAPI]);
+    if (!isLoading && state !== initialState) {
+      const timeoutId = setTimeout(() => {
+        if (LOCAL_MODE) {
+          const savedState = saveToLocalStorage({ ...state });
+          if (savedState) {
+            setLastUpdated(savedState.lastUpdated);
+            try {
+              if (bcRef.current) {
+                bcRef.current.postMessage(savedState);
+              }
+            } catch (e) {}
+          }
+        } else {
+          saveStateToAPI(state);
+        }
+      }, 50); // Debounce de 50ms para resposta mais rápida
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [state, isLoading, saveStateToAPI, saveToLocalStorage]);
 
   // Polling para sincronização (apenas quando usando API)
   useEffect(() => {
+    if (LOCAL_MODE) {
+      // Sem polling no modo local
+      return;
+    }
     if (useLocalStorage) {
       // Não fazer polling quando usando localStorage
       return;
     }
 
     const interval = setInterval(async () => {
-    try {
-      // Pula o polling se houve uma atualização local recente (últimos 3 segundos)
-      if (skipNextPoll) {
-        setSkipNextPoll(false);
-        return;
-      }
-      
-      if (lastLocalUpdate && Date.now() - lastLocalUpdate < 3000) {
-        return;
-      }
-      
-      const apiState = await gameStateAPI.getGameState();
-      if (apiState && apiState.lastUpdated !== lastUpdated) {
-        const { id, lastUpdated: apiLastUpdated, ...gameData } = apiState;
-        
-        // Preserva o estado do timer local se houve uma ação recente (últimos 2 segundos)
-        const recentLocalUpdate = Date.now() - lastLocalUpdate < 2000;
-        if (recentLocalUpdate && state.timer.isRunning !== gameData.timer.isRunning) {
-          gameData.timer = { ...gameData.timer, isRunning: state.timer.isRunning };
-          console.log('Preservando estado do timer local (ação recente):', state.timer.isRunning ? 'rodando' : 'pausado');
+      try {
+        // Pula o polling se houve uma atualização local recente (últimos 3 segundos)
+        if (skipNextPoll) {
+          setSkipNextPoll(false);
+          return;
         }
         
-        dispatch({ type: 'LOAD_STATE', payload: gameData });
-        setLastUpdated(apiLastUpdated);
-        console.log('Estado sincronizado via polling');
+        if (lastLocalUpdate && Date.now() - lastLocalUpdate < 3000) {
+          return;
+        }
+        
+        const apiState = await gameStateAPI.getGameState();
+        if (apiState && apiState.lastUpdated !== lastUpdated) {
+          const { id, lastUpdated: apiLastUpdated, ...gameData } = apiState;
+          
+          // Preserva o estado do timer local se houve uma ação recente (últimos 2 segundos)
+          const recentLocalUpdate = Date.now() - lastLocalUpdate < 2000;
+          if (recentLocalUpdate && state.timer.isRunning !== gameData.timer.isRunning) {
+            gameData.timer = { ...gameData.timer, isRunning: state.timer.isRunning };
+            console.log('Preservando estado do timer local (ação recente):', state.timer.isRunning ? 'rodando' : 'pausado');
+          }
+          
+          dispatch({ type: 'LOAD_STATE', payload: gameData });
+          setLastUpdated(apiLastUpdated);
+          console.log('Estado sincronizado via polling');
+        }
+      } catch (error) {
+        console.error('Erro no polling, mudando para localStorage:', error);
+        setUseLocalStorage(true);
       }
-    } catch (error) {
-      console.error('Erro no polling, mudando para localStorage:', error);
-      setUseLocalStorage(true);
-    }
-  }, 500); // Polling mais frequente para atualizações mais rápidas
-
-  return () => clearInterval(interval);
+    }, 500); // Polling mais frequente para atualizações mais rápidas
+  
+    return () => clearInterval(interval);
   }, [useLocalStorage, lastUpdated, skipNextPoll, lastLocalUpdate, state.timer.isRunning]);
 
   // Timer interval effect
@@ -305,57 +339,102 @@ export function GameStateProvider({ children }) {
     return () => clearInterval(interval);
   }, [state.timer.isRunning]);
 
+  // Sync via BroadcastChannel (local-only)
+  useEffect(() => {
+    if (!LOCAL_MODE) return;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        bcRef.current = new BroadcastChannel('gameState');
+        bcRef.current.onmessage = (ev) => {
+          const data = ev.data;
+          if (data && data.lastUpdated && data.lastUpdated !== lastUpdated) {
+            const { lastUpdated: lu, ...gameData } = data;
+            dispatch({ type: 'LOAD_STATE', payload: gameData });
+            setLastUpdated(lu);
+            console.log('Estado recebido via BroadcastChannel');
+          }
+        };
+        return () => {
+          if (bcRef.current) {
+            bcRef.current.close();
+            bcRef.current = null;
+          }
+        };
+      }
+    } catch (e) {}
+  }, [lastUpdated]);
+
+  // Sync via storage event (fallback)
+  useEffect(() => {
+    if (!LOCAL_MODE) return;
+    const handler = (e) => {
+      if (e.key === 'gameState' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && parsed.lastUpdated && parsed.lastUpdated !== lastUpdated) {
+            const { lastUpdated: lu, ...gameData } = parsed;
+            dispatch({ type: 'LOAD_STATE', payload: gameData });
+            setLastUpdated(lu);
+            console.log('Estado sincronizado via storage event');
+          }
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [lastUpdated]);
+
   // Função para resetar o jogo com fallback para localStorage
   const resetGame = useCallback(async () => {
-  if (useLocalStorage) {
-    // Reset usando localStorage
-    const resetState = {
-      ...initialState,
-      lastUpdated: new Date().toISOString()
-    };
-    const savedState = saveToLocalStorage(resetState);
-    if (savedState) {
-      dispatch({ type: 'LOAD_STATE', payload: initialState });
-      setLastUpdated(savedState.lastUpdated);
-      setLastLocalUpdate(Date.now());
-      setSkipNextPoll(true);
-      console.log('Jogo resetado completamente (localStorage) - Todos os dados zerados');
+    if (LOCAL_MODE || useLocalStorage) {
+      // Reset usando localStorage
+      const resetState = {
+        ...initialState,
+        lastUpdated: new Date().toISOString()
+      };
+      const savedState = saveToLocalStorage(resetState);
+      if (savedState) {
+        dispatch({ type: 'LOAD_STATE', payload: initialState });
+        setLastUpdated(savedState.lastUpdated);
+        setLastLocalUpdate(Date.now());
+        setSkipNextPoll(true);
+        console.log('Jogo resetado completamente (localStorage) - Todos os dados zerados');
+      }
+      return;
     }
-    return;
-  }
 
-  try {
-    // Reset usando API
-    const response = await gameStateAPI.updateGameState({
-      ...initialState,
-      lastUpdated: new Date().toISOString()
-    });
-    
-    if (response) {
-      dispatch({ type: 'LOAD_STATE', payload: initialState });
-      setLastUpdated(response.lastUpdated);
-      setLastLocalUpdate(Date.now());
-      setSkipNextPoll(true);
-      console.log('Jogo resetado completamente (API) - Todos os dados zerados');
+    try {
+      // Reset usando API
+      const response = await gameStateAPI.updateGameState({
+        ...initialState,
+        lastUpdated: new Date().toISOString()
+      });
+      
+      if (response) {
+        dispatch({ type: 'LOAD_STATE', payload: initialState });
+        setLastUpdated(response.lastUpdated);
+        setLastLocalUpdate(Date.now());
+        setSkipNextPoll(true);
+        console.log('Jogo resetado completamente (API) - Todos os dados zerados');
+      }
+    } catch (error) {
+      console.error('Erro ao resetar via API, usando localStorage:', error);
+      setUseLocalStorage(true);
+      
+      // Fallback para localStorage
+      const resetState = {
+        ...initialState,
+        lastUpdated: new Date().toISOString()
+      };
+      const savedState = saveToLocalStorage(resetState);
+      if (savedState) {
+        dispatch({ type: 'LOAD_STATE', payload: initialState });
+        setLastUpdated(savedState.lastUpdated);
+        setLastLocalUpdate(Date.now());
+        setSkipNextPoll(true);
+        console.log('Jogo resetado completamente (localStorage fallback) - Todos os dados zerados');
+      }
     }
-  } catch (error) {
-    console.error('Erro ao resetar via API, usando localStorage:', error);
-    setUseLocalStorage(true);
-    
-    // Fallback para localStorage
-    const resetState = {
-      ...initialState,
-      lastUpdated: new Date().toISOString()
-    };
-    const savedState = saveToLocalStorage(resetState);
-    if (savedState) {
-      dispatch({ type: 'LOAD_STATE', payload: initialState });
-      setLastUpdated(savedState.lastUpdated);
-      setLastLocalUpdate(Date.now());
-      setSkipNextPoll(true);
-      console.log('Jogo resetado completamente (localStorage fallback) - Todos os dados zerados');
-    }
-  }
   }, [useLocalStorage, saveToLocalStorage]);
 
   // Dispatcher customizado que marca atualizações locais
