@@ -1,0 +1,28 @@
+[build]
+  # Diretório onde estão os arquivos de build
+  publish = "build"
+  
+  # Comando para fazer o build
+  command = "npm run build"
+
+# Redirecionamentos para SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Configurações de headers para otimização
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
