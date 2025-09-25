@@ -25,11 +25,8 @@ server.use((req, res, next) => {
 
 server.use(middlewares);
 
-// Monta o roteador do json-server (endpoints como /gameState)
-server.use(router);
-
-// Fallback do React Router: envia index.html para qualquer rota não tratada pela API
-server.get('*', (req, res) => {
+// SPA fallback: qualquer GET que não seja da API deve retornar index.html
+server.get(/^\/(?!gameState)(?!__health)(?!favicon\.ico).*/, (req, res) => {
   const indexPath = path.join(__dirname, 'build', 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
@@ -37,6 +34,9 @@ server.get('*', (req, res) => {
     res.status(404).send('Build não encontrado. Rode "npm run build" primeiro.');
   }
 });
+
+// Monta o roteador do json-server (endpoints como /gameState)
+server.use(router);
 
 // Porta
 const port = process.env.PORT || 3001;
